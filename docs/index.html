@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMP-Capsule-Navigation-Menu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .capsule-demo {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 12px 24px;
+            border-radius: 25px;
+            margin-top: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-weight: 500;
+        }
+        
+        .toc {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .toc h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        .toc ul {
+            list-style: none;
+        }
+        
+        .toc li {
+            margin-bottom: 10px;
+        }
+        
+        .toc a {
+            color: #333;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: block;
+            transition: all 0.3s ease;
+        }
+        
+        .toc a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+        
+        .card h3 {
+            color: #764ba2;
+            margin: 25px 0 15px 0;
+            font-size: 1.3rem;
+        }
+        
+        .card p {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            border: 1px solid #333;
+        }
+        
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-card h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 5px;
+        }
+        
+        .badge.android { background: #3ddc84; }
+        .badge.ios { background: #007aff; }
+        .badge.desktop { background: #6c5ce7; }
+        
+        .example {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .example-header {
+            background: #667eea;
+            color: white;
+            padding: 15px 20px;
+            font-weight: 500;
+        }
+        
+        .example-content {
+            padding: 20px;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 KMP-Capsule-Navigation-Menu</h1>
+            <p>Beautiful floating bottom navigation for Kotlin Multiplatform</p>
+            <div class="capsule-demo">
+                Perfect Capsule Navigation
+            </div>
+        </div>
+        
+        <div class="toc">
+            <h3>📚 Table of Contents</h3>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#quick-start">Quick Start</a></li>
+                <li><a href="#api-reference">API Reference</a></li>
+                <li><a href="#examples">Examples</a></li>
+                <li><a href="#platform-support">Platform Support</a></li>
+                <li><a href="#performance">Performance</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+                <li><a href="#credits">Credits</a></li>
+            </ul>
+        </div>
+        
+        <div class="card" id="overview">
+            <h2>🎯 Overview</h2>
+            <p>KMP-Capsule-Navigation-Menu is a modern, floating bottom navigation component designed specifically for Kotlin Multiplatform applications. It provides a beautiful, glass-effect navigation bar with perfect capsule shapes, smooth animations, and platform-optimized behavior.</p>
+            
+            <h3>Key Benefits</h3>
+            <ul>
+                <li><strong>Modern Design</strong>: Floating navigation bar with glass effect and capsule shapes</li>
+                <li><strong>Cross-Platform</strong>: Works seamlessly on Android, iOS, and Desktop</li>
+                <li><strong>Highly Customizable</strong>: Easy to customize colors, animations, and behavior</li>
+                <li><strong>Accessibility</strong>: Full accessibility support with proper content descriptions</li>
+                <li><strong>Performance</strong>: Optimized for smooth animations and minimal memory usage</li>
+                <li><strong>Safe Area Support</strong>: Respects platform-specific safe areas and navigation bars</li>
+            </ul>
+        </div>
+        
+        <div class="card" id="features">
+            <h2>✨ Features</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>🎨 Modern Design</h4>
+                    <p>Floating navigation bar with glass effect and perfect capsule shapes</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📱 Cross-Platform</h4>
+                    <p>Works seamlessly on Android, iOS, and Desktop platforms</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🎛️ Customizable</h4>
+                    <p>Easy to customize colors, animations, and behavior</p>
+                </div>
+                <div class="feature-card">
+                    <h4>♿ Accessible</h4>
+                    <p>Full accessibility support with proper content descriptions</p>
+                </div>
+                <div class="feature-card">
+                    <h4>⚡ Performance</h4>
+                    <p>Optimized for smooth animations and minimal memory usage</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🛡️ Safe Areas</h4>
+                    <p>Respects platform-specific safe areas and navigation bars</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" id="installation">
+            <h2>🚀 Installation</h2>
+            
+            <h3>Prerequisites</h3>
+            <ul>
+                <li>Kotlin Multiplatform project</li>
+                <li>Compose Multiplatform setup</li>
+                <li>KMP-Capsule library (dependency)</li>
+            </ul>
+            
+            <h3>Step 1: Add as Submodule</h3>
+            <div class="code-block">
+git submodule add https://github.com/lamplis/KMP-Capsule-Navigation-Menu.git libs/KMP-Capsule-Navigation-Menu
+            </div>
+            
+            <h3>Step 2: Configure Gradle</h3>
+            <div class="code-block">
+// settings.gradle.kts (root)
+include(":libs:KMP-Capsule-Navigation-Menu")
+project(":libs:KMP-Capsule-Navigation-Menu").projectDir = File(rootDir, "libs/KMP-Capsule-Navigation-Menu")
+            </div>
+            
+            <h3>Step 3: Add Dependency</h3>
+            <div class="code-block">
+// composeApp/build.gradle.kts (commonMain)
+commonMain.dependencies {
+    implementation(project(":libs:KMP-Capsule-Navigation-Menu"))
+    implementation(project(":libs:KMP-Capsule")) // Required dependency
+}
+            </div>
+            
+            <h3>Step 4: Initialize Submodule</h3>
+            <div class="code-block">
+git submodule update --init --recursive
+            </div>
+        </div>
+        
+        <div class="card" id="quick-start">
+            <h2>🎮 Quick Start</h2>
+            
+            <h3>Basic Usage</h3>
+            <div class="code-block">
+import com.amp_digital.capsule.navigation.FloatingBottomNavigation
+import com.amp_digital.capsule.navigation.NavigationItem
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+
+@Composable
+fun MyApp() {
+    var selectedIndex by remember { mutableStateOf(0) }
+    
+    val navigationItems = listOf(
+        NavigationItem("Home", Icons.Default.Home, "home"),
+        NavigationItem("Profile", Icons.Default.Person, "profile"),
+        NavigationItem("Settings", Icons.Default.Settings, "settings")
+    )
+    
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Your main content here
+        
+        FloatingBottomNavigation(
+            selectedIndex = selectedIndex,
+            onItemSelected = { selectedIndex = it },
+            items = navigationItems,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}
+            </div>
+            
+            <h3>With Custom Configuration</h3>
+            <div class="code-block">
+@Composable
+fun CustomNavigation() {
+    var selectedIndex by remember { mutableStateOf(0) }
+    
+    val config = NavigationConfig(
+        backgroundColor = Color.Blue,
+        selectedItemColor = Color.White,
+        unselectedItemColor = Color.Gray,
+        height = 80.dp,
+        enableGlassEffect = true,
+        glassEffectAlpha = 0.8f,
+        animationDuration = 500
+    )
+    
+    FloatingBottomNavigation(
+        selectedIndex = selectedIndex,
+        onItemSelected = { selectedIndex = it },
+        items = navigationItems,
+        config = config
+    )
+}
+            </div>
+        </div>
+        
+        <div class="card" id="api-reference">
+            <h2>📖 API Reference</h2>
+            
+            <h3>FloatingBottomNavigation</h3>
+            <p>The main composable for the floating bottom navigation bar.</p>
+            
+            <div class="code-block">
+@Composable
+fun FloatingBottomNavigation(
+    selectedIndex: Int,
+    onItemSelected: (Int) -> Unit,
+    items: List&lt;NavigationItem&gt;,
+    config: NavigationConfig = NavigationConfig(),
+    modifier: Modifier = Modifier
+)
+            </div>
+            
+            <h3>NavigationItem</h3>
+            <p>Data class representing a navigation item.</p>
+            
+            <div class="code-block">
+data class NavigationItem(
+    val title: String,
+    val icon: ImageVector,
+    val route: String,
+    val badge: String? = null
+)
+            </div>
+            
+            <h3>NavigationConfig</h3>
+            <p>Configuration class for customizing the navigation appearance and behavior.</p>
+            
+            <div class="code-block">
+data class NavigationConfig(
+    val backgroundColor: Color = Color.Unspecified,
+    val selectedItemColor: Color = Color.Unspecified,
+    val unselectedItemColor: Color = Color.Unspecified,
+    val height: Dp = 72.dp,
+    val cornerRadius: Dp = 36.dp,
+    val horizontalPadding: Dp = 32.dp,
+    val verticalPadding: Dp = 12.dp,
+    val itemSpacing: Dp = 8.dp,
+    val animationDuration: Int = 300,
+    val enableHapticFeedback: Boolean = true,
+    val enableGlassEffect: Boolean = true,
+    val glassEffectAlpha: Float = 0.92f
+)
+            </div>
+        </div>
+        
+        <div class="card" id="examples">
+            <h2>💻 Examples</h2>
+            
+            <div class="example">
+                <div class="example-header">Basic Navigation</div>
+                <div class="example-content">
+                    <div class="code-block">
+@Composable
+fun BasicNavigation() {
+    var selectedIndex by remember { mutableStateOf(0) }
+    
+    val items = listOf(
+        NavigationItem("Home", Icons.Default.Home, "home"),
+        NavigationItem("Search", Icons.Default.Search, "search"),
+        NavigationItem("Profile", Icons.Default.Person, "profile")
+    )
+    
+    FloatingBottomNavigation(
+        selectedIndex = selectedIndex,
+        onItemSelected = { selectedIndex = it },
+        items = items
+    )
+}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="example">
+                <div class="example-header">Navigation with Badges</div>
+                <div class="example-content">
+                    <div class="code-block">
+@Composable
+fun NavigationWithBadges() {
+    var selectedIndex by remember { mutableStateOf(0) }
+    
+    val items = listOf(
+        NavigationItem("Home", Icons.Default.Home, "home"),
+        NavigationItem("Messages", Icons.Default.Message, "messages", badge = "3"),
+        NavigationItem("Profile", Icons.Default.Person, "profile")
+    )
+    
+    FloatingBottomNavigation(
+        selectedIndex = selectedIndex,
+        onItemSelected = { selectedIndex = it },
+        items = items
+    )
+}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="example">
+                <div class="example-header">Custom Styled Navigation</div>
+                <div class="example-content">
+                    <div class="code-block">
+@Composable
+fun CustomStyledNavigation() {
+    var selectedIndex by remember { mutableStateOf(0) }
+    
+    val config = NavigationConfig(
+        backgroundColor = Color(0xFF6200EE),
+        selectedItemColor = Color.White,
+        unselectedItemColor = Color.White.copy(alpha = 0.7f),
+        height = 88.dp,
+        cornerRadius = 44.dp,
+        horizontalPadding = 16.dp,
+        verticalPadding = 8.dp,
+        animationDuration = 400
+    )
+    
+    FloatingBottomNavigation(
+        selectedIndex = selectedIndex,
+        onItemSelected = { selectedIndex = it },
+        items = items,
+        config = config
+    )
+}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" id="platform-support">
+            <h2>📱 Platform Support</h2>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4><span class="badge android">Android</span></h4>
+                    <p><strong>Minimum SDK:</strong> API 21 (Android 5.0)</p>
+                    <p><strong>Features:</strong> Material Design 3 integration, haptic feedback, proper theming</p>
+                    <p><strong>Safe Areas:</strong> Handles navigation bar and status bar</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="badge ios">iOS</span></h4>
+                    <p><strong>Minimum Version:</strong> iOS 13.0</p>
+                    <p><strong>Features:</strong> Native iOS design patterns, haptic feedback, proper safe area handling</p>
+                    <p><strong>Safe Areas:</strong> Handles home indicator and notch</p>
+                </div>
+                <div class="feature-card">
+                    <h4><span class="badge desktop">Desktop</span></h4>
+                    <p><strong>Platforms:</strong> Windows, macOS, Linux</p>
+                    <p><strong>Features:</strong> Responsive design, keyboard navigation support</p>
+                    <p><strong>Safe Areas:</strong> Not applicable</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" id="performance">
+            <h2>⚡ Performance</h2>
+            
+            <h3>Optimization Features</h3>
+            <ul>
+                <li><strong>Efficient Rendering:</strong> Uses Compose's efficient rendering system</li>
+                <li><strong>Minimal Recomposition:</strong> Optimized to minimize unnecessary recompositions</li>
+                <li><strong>Memory Efficient:</strong> Minimal memory footprint with efficient state management</li>
+                <li><strong>Smooth Animations:</strong> 60fps animations with proper easing curves</li>
+            </ul>
+            
+            <h3>Best Practices</h3>
+            <ol>
+                <li><strong>Use Stable References:</strong> Keep navigation items and configuration stable</li>
+                <li><strong>Minimize Items:</strong> Limit to 3-5 navigation items for optimal UX</li>
+                <li><strong>Optimize Icons:</strong> Use vector icons for better performance</li>
+                <li><strong>Reuse Configuration:</strong> Create configuration objects once and reuse</li>
+            </ol>
+        </div>
+        
+        <div class="card" id="troubleshooting">
+            <h2>🔧 Troubleshooting</h2>
+            
+            <h3>Common Issues</h3>
+            
+            <h4>Navigation Not Appearing</h4>
+            <ul>
+                <li>Ensure KMP-Capsule dependency is added</li>
+                <li>Check that the navigation is placed in a Box with proper alignment</li>
+                <li>Verify that items list is not empty</li>
+            </ul>
+            
+            <h4>Styling Issues</h4>
+            <ul>
+                <li>Check that colors are properly defined in your theme</li>
+                <li>Ensure MaterialTheme is properly set up</li>
+                <li>Verify that the configuration is applied correctly</li>
+            </ul>
+            
+            <h4>Animation Problems</h4>
+            <ul>
+                <li>Check that animation duration is reasonable (100-1000ms)</li>
+                <li>Ensure that the selected index is properly managed</li>
+                <li>Verify that the state is stable and not changing frequently</li>
+            </ul>
+        </div>
+        
+        <div class="card" id="credits">
+            <h2>🙏 Credits</h2>
+            <ul>
+                <li><a href="https://github.com/lamplis/KMP-Capsule">KMP-Capsule</a> for the perfect capsule shapes</li>
+                <li><a href="https://github.com/Kyant0/Capsule">Kyant0/Capsule</a> for the original capsule implementation</li>
+                <li>Jetpack Compose team for the amazing UI framework</li>
+                <li>Kotlin Multiplatform team for the cross-platform capabilities</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>Made with ❤️ for the Kotlin Multiplatform community</p>
+            <p><a href="https://github.com/lamplis/KMP-Capsule-Navigation-Menu">GitHub Repository</a> | <a href="https://opensource.org/licenses/Apache-2.0">Apache License 2.0</a></p>
+        </div>
+    </div>
+</body>
+</html>
