@@ -5,12 +5,14 @@
 Elegant, glassy, capsule‑shaped bottom navigation for Kotlin Multiplatform (Android + iOS) built with Compose Multiplatform.
 
 [![Kotlin](https://img.shields.io/badge/kotlin-2.x-blue.svg)](https://kotlinlang.org/)  
-[![Compose Multiplatform](https://img.shields.io/badge/compose-multiplatform-1.7%2B-green.svg)](https://www.jetbrains.com/lp/compose-multiplatform/)  
+[![Compose Multiplatform](https://img.shields.io/badge/compose_multiplatform_-_1.7%2B-green.svg)](https://www.jetbrains.com/lp/compose-multiplatform/)  
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 </div>
 
 ---
+
+![Capsule Floating Menu](docs/capsule-floating-menu.png)
 
 - **Multiplatform**: Android and iOS targets from one codebase
 - **Capsule Aesthetic**: Uses `ContinuousCapsule` shape from `KMP‑Capsule` for a crisp, modern look
