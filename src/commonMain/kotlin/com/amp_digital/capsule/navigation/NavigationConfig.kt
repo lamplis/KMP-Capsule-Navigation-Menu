@@ -11,7 +11,6 @@ import androidx.compose.ui.unit.dp
  * @param selectedItemColor Color for selected navigation items
  * @param unselectedItemColor Color for unselected navigation items
  * @param height Height of the navigation bar
- * @param cornerRadius Corner radius for the capsule shape
  * @param horizontalPadding Horizontal padding around the navigation bar
  * @param verticalPadding Vertical padding around the navigation bar
  * @param itemSpacing Spacing between navigation items
@@ -25,7 +24,6 @@ data class NavigationConfig(
     val selectedItemColor: Color = Color.Unspecified,
     val unselectedItemColor: Color = Color.Unspecified,
     val height: Dp = 72.dp,
-    val cornerRadius: Dp = 36.dp, // Half of height for perfect capsule
     val horizontalPadding: Dp = 32.dp,
     val verticalPadding: Dp = 12.dp,
     val itemSpacing: Dp = 8.dp,

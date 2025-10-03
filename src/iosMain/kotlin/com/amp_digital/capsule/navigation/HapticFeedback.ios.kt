@@ -1,5 +1,7 @@
 package com.amp_digital.capsule.navigation
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
 
@@ -17,13 +19,10 @@ actual fun performHapticFeedback() {
 @Composable
 fun rememberHapticFeedback(): HapticFeedback {
     return remember {
-        HapticFeedback { performHapticFeedback() }
+        object : HapticFeedback {
+            override fun performHapticFeedback() {
+                performHapticFeedback()
+            }
+        }
     }
-}
-
-/**
- * Haptic feedback interface for platform-specific implementations.
- */
-interface HapticFeedback {
-    fun performHapticFeedback()
 }

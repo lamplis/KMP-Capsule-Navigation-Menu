@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
@@ -20,13 +21,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.amp_digital.capsule.ContinuousCapsule
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Floating bottom navigation bar with glass effect and safe area support.
@@ -220,3 +230,37 @@ private fun FloatingNavigationItem(
  * This will be implemented differently for each platform.
  */
 expect fun performHapticFeedback()
+
+/**
+ * Preview for Cardium floating bottom navigation
+ */
+@Composable
+@Preview
+fun FloatingBottomNavigationPreview() {
+    MaterialTheme() {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.primary
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                var selectedIndex by remember { mutableStateOf(0) }
+                val items = listOf(
+                    NavigationItem("Home", Icons.Filled.Home, "home"),
+                    NavigationItem("Collection", Icons.Filled.AccountCircle, "collection", badge = "3"),
+                    NavigationItem("Trade", Icons.Filled.SwapHoriz, "trade"),
+                    NavigationItem("Nearby", Icons.Filled.LocationOn, "nearby")
+                )
+
+                FloatingBottomNavigation(
+                    selectedIndex = selectedIndex,
+                    onItemSelected = { selectedIndex = it },
+                    items = items,
+                    config = NavigationConfig(),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                )
+            }
+        }
+    }
+}

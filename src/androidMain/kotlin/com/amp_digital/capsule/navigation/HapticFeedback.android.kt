@@ -1,6 +1,7 @@
 package com.amp_digital.capsule.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalView
 
 /**
@@ -18,13 +19,10 @@ actual fun performHapticFeedback() {
 fun rememberHapticFeedback(): HapticFeedback {
     val view = LocalView.current
     return remember {
-        HapticFeedback { view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY) }
+        object : HapticFeedback {
+            override fun performHapticFeedback() {
+                view.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+            }
+        }
     }
-}
-
-/**
- * Haptic feedback interface for platform-specific implementations.
- */
-interface HapticFeedback {
-    fun performHapticFeedback()
 }
