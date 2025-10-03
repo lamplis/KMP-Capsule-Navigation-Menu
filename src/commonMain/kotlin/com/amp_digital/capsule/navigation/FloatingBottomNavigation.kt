@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -63,64 +65,85 @@ fun FloatingBottomNavigation(
     onItemSelected: (Int) -> Unit,
     items: List<NavigationItem>,
     config: NavigationConfig = NavigationConfig(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    fab: FabAction? = null
 ) {
     val bottomInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
     
-    val backgroundColor = if (config.backgroundColor != Color.Unspecified) {
-        config.backgroundColor
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
+    // Create haptic feedback instance for this composable
+    val hapticFeedback = rememberHapticFeedback()
     
-    val selectedColor = if (config.selectedItemColor != Color.Unspecified) {
-        config.selectedItemColor
-    } else {
-        MaterialTheme.colorScheme.primary
-    }
-    
-    val unselectedColor = if (config.unselectedItemColor != Color.Unspecified) {
-        config.unselectedItemColor
-    } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-    }
+    val colors = resolveNavigationColors(config)
 
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(bottomInsets.asPaddingValues()) // Apply safe area padding
+            .padding(bottomInsets.asPaddingValues())
             .padding(
                 horizontal = config.horizontalPadding,
                 vertical = config.verticalPadding
             )
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(config.height)
-                .clip(ContinuousCapsule)
-                .background(
-                    color = if (config.enableGlassEffect) {
-                        backgroundColor.copy(alpha = config.glassEffectAlpha)
-                    } else {
-                        backgroundColor
-                    }
-                )
-                .padding(horizontal = config.itemSpacing, vertical = config.itemSpacing),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            items.forEachIndexed { index, item ->
-                FloatingNavigationItem(
-                    item = item,
-                    isSelected = selectedIndex == index,
-                    onClick = { onItemSelected(index) },
-                    selectedColor = selectedColor,
-                    unselectedColor = unselectedColor,
-                    animationDuration = config.animationDuration,
-                    enableHapticFeedback = config.enableHapticFeedback
+            val resolvedFab = fab ?: items.getOrNull(selectedIndex)?.fabAction
+
+            MenuContainer(
+                items = items,
+                selectedIndex = selectedIndex,
+                onItemSelected = onItemSelected,
+                colors = colors,
+                config = config,
+                hapticFeedback = hapticFeedback
+            )
+            
+            resolvedFab?.let { action ->
+                FloatingActionButton(
+                    action = action,
+                    config = config,
+                    hapticFeedback = hapticFeedback
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun MenuContainer(
+    items: List<NavigationItem>,
+    selectedIndex: Int,
+    onItemSelected: (Int) -> Unit,
+    colors: NavigationColors,
+    config: NavigationConfig,
+    hapticFeedback: HapticFeedback
+) {
+    Row(
+        modifier = Modifier
+            .height(config.height)
+            .clip(ContinuousCapsule)
+            .background(
+                color = if (config.enableGlassEffect) {
+                    colors.backgroundColor.copy(alpha = config.glassEffectAlpha)
+                } else {
+                    colors.backgroundColor
+                }
+            )
+            .padding(horizontal = config.itemSpacing, vertical = config.itemSpacing),
+        horizontalArrangement = Arrangement.spacedBy(config.itemSpacing),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        items.forEachIndexed { index, item ->
+            FloatingNavigationItem(
+                item = item,
+                isSelected = selectedIndex == index,
+                onClick = { onItemSelected(index) },
+                colors = colors,
+                animationDuration = config.animationDuration,
+                enableHapticFeedback = config.enableHapticFeedback,
+                hapticFeedback = hapticFeedback
+            )
         }
     }
 }
@@ -130,10 +153,10 @@ private fun FloatingNavigationItem(
     item: NavigationItem,
     isSelected: Boolean,
     onClick: () -> Unit,
-    selectedColor: Color,
-    unselectedColor: Color,
+    colors: NavigationColors,
     animationDuration: Int,
-    enableHapticFeedback: Boolean
+    enableHapticFeedback: Boolean,
+    hapticFeedback: HapticFeedback
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -145,7 +168,7 @@ private fun FloatingNavigationItem(
         if (isPressed) {
             if (enableHapticFeedback) {
                 // Perform haptic feedback - platform specific implementation
-                performHapticFeedback()
+                hapticFeedback.performHapticFeedback()
             }
             // Pulse effect: reduce transparency (increase alpha) and go back
             containerAlpha.animateTo(
@@ -167,23 +190,23 @@ private fun FloatingNavigationItem(
         )
     }
 
-    val textColor = if (isSelected) selectedColor else unselectedColor
-    val iconColor = if (isSelected) selectedColor else unselectedColor
+    val textColor = if (isSelected) colors.selectedColor else colors.unselectedColor
+    val iconColor = if (isSelected) colors.selectedColor else colors.unselectedColor
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
-            .width(72.dp) // Fixed width for uniform buttons
+            .width(72.dp)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null // Remove default ripple
             ) { onClick() }
             .background(
-                color = selectedColor.copy(alpha = containerAlpha.value),
+                color = colors.selectedColor.copy(alpha = containerAlpha.value),
                 shape = ContinuousCapsule
             )
-            .padding(horizontal = 8.dp, vertical = 8.dp)
+            .padding(horizontal = 0.dp, vertical = 8.dp)
     ) {
         Box {
             Icon(
@@ -199,14 +222,14 @@ private fun FloatingNavigationItem(
                     modifier = Modifier
                         .size(16.dp)
                         .background(
-                            color = selectedColor,
+                            color = MaterialTheme.colorScheme.error,
                             shape = ContinuousCapsule
                         )
                         .align(Alignment.TopEnd)
                 ) {
                     Text(
                         text = badge,
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = MaterialTheme.colorScheme.errorContainer,
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.align(Alignment.Center)
@@ -232,18 +255,115 @@ private fun FloatingNavigationItem(
 expect fun performHapticFeedback()
 
 /**
- * Preview for Cardium floating bottom navigation
+ * Composable haptic feedback function that works within Composable context.
+ * This provides better haptic feedback on Android by accessing the context.
+ */
+@Composable
+expect fun performHapticFeedbackComposable()
+
+/**
+ * Initialize haptic feedback system (Android only).
+ * This should be called from the app's main activity or application class.
+ */
+expect fun initHapticFeedback()
+
+/**
+ * Initialize haptic feedback from Composable context (Android only).
+ * This is called automatically when the navigation component is first composed.
+ */
+@Composable
+expect fun initHapticFeedbackFromComposable()
+
+/**
+ * Remember haptic feedback instance for use in Composables.
+ * This provides a non-Composable interface for haptic feedback.
+ */
+@Composable
+expect fun rememberHapticFeedback(): HapticFeedback
+
+/**
+ * Interface for haptic feedback that can be called from non-Composable contexts.
+ */
+interface HapticFeedback {
+    fun performHapticFeedback()
+}
+
+/**
+ * Resolved navigation colors for consistent theming.
+ */
+private data class NavigationColors(
+    val backgroundColor: Color,
+    val selectedColor: Color,
+    val unselectedColor: Color
+)
+
+/**
+ * Resolves navigation colors from config or falls back to Material theme.
+ */
+@Composable
+private fun resolveNavigationColors(config: NavigationConfig): NavigationColors {
+    return NavigationColors(
+        backgroundColor = config.backgroundColor.takeIf { it != Color.Unspecified }
+            ?: MaterialTheme.colorScheme.surface,
+        selectedColor = config.selectedItemColor.takeIf { it != Color.Unspecified }
+            ?: MaterialTheme.colorScheme.primary,
+        unselectedColor = config.unselectedItemColor.takeIf { it != Color.Unspecified }
+            ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+    )
+}
+
+/**
+ * Floating Action Button component for navigation.
+ */
+@Composable
+private fun FloatingActionButton(
+    action: FabAction,
+    config: NavigationConfig,
+    hapticFeedback: HapticFeedback
+) {
+    val containerColor = action.containerColor ?: 
+        config.fabContainerColor.takeIf { it != Color.Unspecified } ?: 
+        MaterialTheme.colorScheme.primary
+    
+    val iconColor = action.iconColor ?: 
+        config.fabIconColor.takeIf { it != Color.Unspecified } ?: 
+        MaterialTheme.colorScheme.onPrimary
+
+    Box(
+        modifier = Modifier
+            .size(config.fabSize)
+            .clip(CircleShape)
+            .background(containerColor)
+            .clickable {
+                if (config.enableHapticFeedback) {
+                    hapticFeedback.performHapticFeedback()
+                }
+                action.onClick()
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = action.icon,
+            contentDescription = action.contentDescription,
+            tint = iconColor
+        )
+    }
+}
+
+
+/**
+ * Preview for floating bottom navigation
  */
 @Composable
 @Preview
 fun FloatingBottomNavigationPreview() {
-    MaterialTheme() {
+    MaterialTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primaryContainer
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                var selectedIndex by remember { mutableStateOf(0) }
+                var selectedIndex by remember { mutableStateOf(1) }
                 val items = listOf(
                     NavigationItem("Home", Icons.Filled.Home, "home"),
                     NavigationItem("Collection", Icons.Filled.AccountCircle, "collection", badge = "3"),
@@ -258,7 +378,12 @@ fun FloatingBottomNavigationPreview() {
                     config = NavigationConfig(),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
+                    fab = FabAction(
+                        icon = Icons.Filled.Add,
+                        contentDescription = "Add",
+                        onClick = {}
+                    )
                 )
             }
         }

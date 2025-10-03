@@ -24,11 +24,15 @@ data class NavigationConfig(
     val selectedItemColor: Color = Color.Unspecified,
     val unselectedItemColor: Color = Color.Unspecified,
     val height: Dp = 72.dp,
-    val horizontalPadding: Dp = 32.dp,
+    val horizontalPadding: Dp = 0.dp,
     val verticalPadding: Dp = 12.dp,
-    val itemSpacing: Dp = 8.dp,
+    val itemSpacing: Dp = 0.dp,
     val animationDuration: Int = 300,
     val enableHapticFeedback: Boolean = true,
     val enableGlassEffect: Boolean = true,
-    val glassEffectAlpha: Float = 0.92f
+    val glassEffectAlpha: Float = 0.92f,
+    // FAB visuals (used only if fab is provided)
+    val fabSize: Dp = 56.dp,
+    val fabContainerColor: Color = Color.Unspecified,
+    val fabIconColor: Color = Color.Unspecified
 )

@@ -14,5 +14,6 @@ data class NavigationItem(
     val title: String,
     val icon: ImageVector,
     val route: String,
-    val badge: String? = null
+    val badge: String? = null,
+    val fabAction: FabAction? = null
 )
