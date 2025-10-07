@@ -1,6 +1,7 @@
 package com.amp_digital.capsule.navigation
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -35,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -119,75 +122,73 @@ private fun MenuContainer(
     config: NavigationConfig,
     hapticFeedback: HapticFeedback
 ) {
+    // Track press states for each item
+    val pressStates = remember { mutableStateMapOf<Int, Boolean>() }
+    
+    Box {
+        // Original MenuContainer (no animations/effects)
     Row(
         modifier = Modifier
             .height(config.height)
             .clip(ContinuousCapsule)
-            .background(
-                color = if (config.enableGlassEffect) {
-                    colors.backgroundColor.copy(alpha = config.glassEffectAlpha)
-                } else {
-                    colors.backgroundColor
-                }
-            )
+                .background(colors.backgroundColor)
             .padding(horizontal = config.itemSpacing, vertical = config.itemSpacing),
         horizontalArrangement = Arrangement.spacedBy(config.itemSpacing),
         verticalAlignment = Alignment.CenterVertically
     ) {
         items.forEachIndexed { index, item ->
-            FloatingNavigationItem(
+                StaticNavigationItem(
                 item = item,
                 isSelected = selectedIndex == index,
                 onClick = { onItemSelected(index) },
                 colors = colors,
-                animationDuration = config.animationDuration,
-                enableHapticFeedback = config.enableHapticFeedback,
+                    enableHapticFeedback = false, // Disable haptic here, will be handled in highlight
+                    hapticFeedback = hapticFeedback,
+                    onPressChange = { isPressed ->
+                        pressStates[index] = isPressed
+                    }
+                )
+            }
+        }
+        
+        // Floating red highlight - positioned between MenuContainer and MenuOverlay
+        FloatingHighlight(
+            selectedIndex = selectedIndex,
+            pressStates = pressStates,
+            config = config,
+            colors = colors,
+            hapticFeedback = hapticFeedback
+        )
+        
+        // MenuOverlay - same content, 50% transparent, positioned on top
+        MenuOverlay(
+            items = items,
+            selectedIndex = selectedIndex,
+            onItemSelected = onItemSelected,
+            colors = colors,
+            config = config,
                 hapticFeedback = hapticFeedback
             )
-        }
     }
 }
 
 @Composable
-private fun FloatingNavigationItem(
+private fun StaticNavigationItem(
     item: NavigationItem,
     isSelected: Boolean,
     onClick: () -> Unit,
     colors: NavigationColors,
-    animationDuration: Int,
     enableHapticFeedback: Boolean,
-    hapticFeedback: HapticFeedback
+    hapticFeedback: HapticFeedback,
+    onPressChange: (Boolean) -> Unit = {}
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     
-    // Pulsing animation for the icon container
-    val containerAlpha = remember { Animatable(if (isSelected) 0.2f else 0f) }
-    
+    // Notify parent of press state changes
     LaunchedEffect(isPressed) {
-        if (isPressed) {
-            if (enableHapticFeedback) {
-                // Perform haptic feedback - platform specific implementation
-                hapticFeedback.performHapticFeedback()
-            }
-            // Pulse effect: reduce transparency (increase alpha) and go back
-            containerAlpha.animateTo(
-                targetValue = 0.4f,
-                animationSpec = tween(durationMillis = 100)
-            )
-            containerAlpha.animateTo(
-                targetValue = if (isSelected) 0.2f else 0f,
-                animationSpec = tween(durationMillis = 200)
-            )
-        }
-    }
-    
-    LaunchedEffect(isSelected) {
-        // Smoothly transition to selected/unselected state
-        containerAlpha.animateTo(
-            targetValue = if (isSelected) 0.2f else 0f,
-            animationSpec = tween(durationMillis = animationDuration)
-        )
+        onPressChange(isPressed)
+        // No haptic feedback here - only at end of slide animation
     }
 
     val textColor = if (isSelected) colors.selectedColor else colors.unselectedColor
@@ -202,10 +203,7 @@ private fun FloatingNavigationItem(
                 interactionSource = interactionSource,
                 indication = null // Remove default ripple
             ) { onClick() }
-            .background(
-                color = colors.selectedColor.copy(alpha = containerAlpha.value),
-                shape = ContinuousCapsule
-            )
+            // No background effect - completely transparent like OverlayNavigationItem
             .padding(horizontal = 0.dp, vertical = 8.dp)
     ) {
         Box {
@@ -248,45 +246,173 @@ private fun FloatingNavigationItem(
     }
 }
 
-/**
- * Platform-specific haptic feedback implementation.
- * This will be implemented differently for each platform.
- */
-expect fun performHapticFeedback()
-
-/**
- * Composable haptic feedback function that works within Composable context.
- * This provides better haptic feedback on Android by accessing the context.
- */
 @Composable
-expect fun performHapticFeedbackComposable()
-
-/**
- * Initialize haptic feedback system (Android only).
- * This should be called from the app's main activity or application class.
- */
-expect fun initHapticFeedback()
-
-/**
- * Initialize haptic feedback from Composable context (Android only).
- * This is called automatically when the navigation component is first composed.
- */
-@Composable
-expect fun initHapticFeedbackFromComposable()
-
-/**
- * Remember haptic feedback instance for use in Composables.
- * This provides a non-Composable interface for haptic feedback.
- */
-@Composable
-expect fun rememberHapticFeedback(): HapticFeedback
-
-/**
- * Interface for haptic feedback that can be called from non-Composable contexts.
- */
-interface HapticFeedback {
-    fun performHapticFeedback()
+private fun MenuOverlay(
+    items: List<NavigationItem>,
+    selectedIndex: Int,
+    onItemSelected: (Int) -> Unit,
+    colors: NavigationColors,
+    config: NavigationConfig,
+    hapticFeedback: HapticFeedback
+) {
+    Row(
+        modifier = Modifier
+            .height(config.height)
+            .clip(ContinuousCapsule)
+            .background(colors.backgroundColor.copy(alpha = 0.1f)) // 50% transparent
+            .padding(horizontal = config.itemSpacing, vertical = config.itemSpacing),
+        horizontalArrangement = Arrangement.spacedBy(config.itemSpacing),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        items.forEachIndexed { index, item ->
+            OverlayNavigationItem(
+                item = item,
+                isSelected = selectedIndex == index,
+                onClick = { onItemSelected(index) },
+                colors = colors,
+                enableHapticFeedback = config.enableHapticFeedback,
+                hapticFeedback = hapticFeedback
+            )
+        }
+    }
 }
+
+@Composable
+private fun OverlayNavigationItem(
+    item: NavigationItem,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    colors: NavigationColors,
+    enableHapticFeedback: Boolean,
+    hapticFeedback: HapticFeedback
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    LaunchedEffect(isPressed) {
+        // No haptic feedback here - only at end of slide animation
+    }
+
+    val textColor = if (isSelected) colors.selectedColor else colors.unselectedColor
+    val iconColor = if (isSelected) colors.selectedColor else colors.unselectedColor
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .width(72.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null // Remove default ripple
+            ) { onClick() }
+            // No background effect - completely transparent
+            .padding(horizontal = 0.dp, vertical = 8.dp)
+    ) {
+        Box {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = item.title,
+                modifier = Modifier.size(24.dp),
+                tint = iconColor
+            )
+            
+            // Badge indicator - no background effects
+            item.badge?.let { badge ->
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .align(Alignment.TopEnd)
+                ) {
+                    Text(
+                        text = badge,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            }
+        }
+        
+        Text(
+            text = item.title,
+            fontSize = 9.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = textColor,
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun FloatingHighlight(
+    selectedIndex: Int,
+    pressStates: Map<Int, Boolean>,
+    config: NavigationConfig,
+    colors: NavigationColors,
+    hapticFeedback: HapticFeedback
+) {
+    // Calculate the X position of the selected item
+    val itemWidth = 72.dp
+    val targetX = config.itemSpacing + (itemWidth + config.itemSpacing) * selectedIndex
+    
+    // Animated offset for smooth sliding
+    val animatedOffsetX = remember { Animatable(targetX.value) }
+    
+    // Find which item is being pressed
+    val pressedIndex = pressStates.entries.find { it.value }?.key
+    
+    // Animate to selected item position when selection changes
+    LaunchedEffect(selectedIndex) {
+        val newTargetX = config.itemSpacing + (itemWidth + config.itemSpacing) * selectedIndex
+        animatedOffsetX.animateTo(
+            targetValue = newTargetX.value,
+            animationSpec = tween(
+                durationMillis = config.animationDuration,
+                easing = EaseInOut
+            )
+        )
+        // Trigger haptic feedback when slide animation completes
+        if (config.enableHapticFeedback) {
+            hapticFeedback.performHapticFeedback()
+        }
+    }
+    
+    // Animate to pressed item position on press down
+    LaunchedEffect(pressedIndex) {
+        if (pressedIndex != null) {
+            val pressedX = config.itemSpacing + (itemWidth + config.itemSpacing) * pressedIndex
+            animatedOffsetX.animateTo(
+                targetValue = pressedX.value,
+                animationSpec = tween(
+                    durationMillis = config.animationDuration,
+                    easing = EaseInOut
+                )
+            )
+            // No haptic feedback here - it's triggered at the end of the slide animation
+        } else {
+            // Return to selected item position when press is released
+            val newTargetX = config.itemSpacing + (itemWidth + config.itemSpacing) * selectedIndex
+            animatedOffsetX.animateTo(
+                targetValue = newTargetX.value,
+                animationSpec = tween(
+                    durationMillis = config.animationDuration,
+                    easing = EaseInOut
+                )
+            )
+        }
+    }
+    
+    Box(
+        modifier = Modifier
+            .offset(x = animatedOffsetX.value.dp, y = 0.dp)
+            .width(itemWidth)
+            .height(config.height)
+            .clip(ContinuousCapsule)
+            .background(colors.selectedColor.copy(alpha = 0.3f)) // 30% transparent selected color
+    )
+}
+
 
 /**
  * Resolved navigation colors for consistent theming.
