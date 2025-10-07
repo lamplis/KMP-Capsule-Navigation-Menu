@@ -27,7 +27,7 @@ data class NavigationConfig(
     val horizontalPadding: Dp = 0.dp,
     val verticalPadding: Dp = 12.dp,
     val itemSpacing: Dp = 0.dp,
-    val animationDuration: Int = 300,
+    val animationDuration: Int = 150,
     val enableHapticFeedback: Boolean = true,
     val enableGlassEffect: Boolean = true,
     val glassEffectAlpha: Float = 0.92f,

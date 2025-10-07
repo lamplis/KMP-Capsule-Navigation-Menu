@@ -402,17 +402,40 @@ private fun FloatingHighlight(
             )
         }
     }
-    
+    val highlightScale = 0.90f
     Box(
         modifier = Modifier
-            .offset(x = animatedOffsetX.value.dp, y = 0.dp)
-            .width(itemWidth)
-            .height(config.height)
+            .centerScale(
+                baseWidth = itemWidth,
+                baseHeight = config.height,
+                scale = highlightScale,
+                baseOffsetX = animatedOffsetX.value.dp,
+                baseOffsetY = 0.dp
+            )
             .clip(ContinuousCapsule)
             .background(colors.selectedColor.copy(alpha = 0.3f)) // 30% transparent selected color
     )
 }
 
+
+/**
+ * Centers a down-scaled box within the given base width/height frame.
+ * It applies the appropriate offset and size so the scaled box remains centered.
+ */
+private fun Modifier.centerScale(
+    baseWidth: androidx.compose.ui.unit.Dp,
+    baseHeight: androidx.compose.ui.unit.Dp,
+    scale: Float,
+    baseOffsetX: androidx.compose.ui.unit.Dp = 0.dp,
+    baseOffsetY: androidx.compose.ui.unit.Dp = 0.dp
+): Modifier {
+    val dx = (baseWidth * (1f - scale)) / 2f
+    val dy = (baseHeight * (1f - scale)) / 2f
+    return this
+        .offset(x = baseOffsetX + dx, y = baseOffsetY + dy)
+        .width(baseWidth * scale)
+        .height(baseHeight * scale)
+}
 
 /**
  * Resolved navigation colors for consistent theming.
