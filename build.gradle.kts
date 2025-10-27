@@ -43,6 +43,8 @@ kotlin {
             implementation(libs.androidx.activity.compose)
                // Enable Android Studio preview rendering
                implementation(compose.uiTooling)
+            // Ensure Android target sees KMP-Capsule expect/actuals
+            implementation(project(":libs:KMP-Capsule"))
         }
     }
 }
