@@ -36,8 +36,8 @@ data class NavigationConfig(
     val enableHapticFeedback: Boolean = true,
     val enableGlassEffect: Boolean = true,
     val glassEffectAlpha: Float = 0.92f,
-    // Container elevation for the navigation capsule (default 0 for backwards compatibility)
-    val containerElevation: Dp = 0.dp,
+    // Container elevation for the navigation capsule (provides soft shadow on Android)
+    val containerElevation: Dp = 8.dp,
     // FAB visuals (used only if fab is provided)
     val fabSize: Dp = 56.dp,
     val fabContainerColor: Color = Color.Unspecified,

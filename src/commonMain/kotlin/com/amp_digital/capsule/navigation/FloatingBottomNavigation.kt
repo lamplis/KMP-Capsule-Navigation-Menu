@@ -126,18 +126,19 @@ private fun MenuContainer(
     val pressStates = remember { mutableStateMapOf<Int, Boolean>() }
     
     // Wrap in elevated Surface for consistent shadow treatment on the navigation capsule
+    // Note: Android requires an opaque surface color to render shadows properly
     Surface(
         shape = ContinuousCapsule,
-        color = Color.Transparent,
+        color = colors.backgroundColor,
         shadowElevation = config.containerElevation,
     ) {
         Box {
             // Original MenuContainer content (no animations/effects)
+            // Background is provided by the outer Surface for proper shadow rendering
             Row(
                 modifier = Modifier
                     .height(config.height)
                     .clip(ContinuousCapsule)
-                    .background(colors.backgroundColor)
                     .padding(horizontal = config.itemSpacing, vertical = config.itemSpacing),
                 horizontalArrangement = Arrangement.spacedBy(config.itemSpacing),
                 verticalAlignment = Alignment.CenterVertically
