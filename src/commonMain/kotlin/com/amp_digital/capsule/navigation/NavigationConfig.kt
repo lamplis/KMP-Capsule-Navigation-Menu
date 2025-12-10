@@ -18,6 +18,11 @@ import androidx.compose.ui.unit.dp
  * @param enableHapticFeedback Whether to enable haptic feedback on item selection
  * @param enableGlassEffect Whether to enable glass effect (translucent background)
  * @param glassEffectAlpha Alpha value for glass effect (0.0 to 1.0)
+ * @param containerElevation Shadow elevation for the navigation capsule (provides soft shadow)
+ * @param fabSize Size of the floating action button
+ * @param fabContainerColor Container color for the FAB
+ * @param fabIconColor Icon color for the FAB
+ * @param fabElevation Shadow elevation for the FAB (provides soft shadow)
  */
 data class NavigationConfig(
     val backgroundColor: Color = Color.Unspecified,
@@ -31,8 +36,11 @@ data class NavigationConfig(
     val enableHapticFeedback: Boolean = true,
     val enableGlassEffect: Boolean = true,
     val glassEffectAlpha: Float = 0.92f,
+    // Container elevation for the navigation capsule (default 0 for backwards compatibility)
+    val containerElevation: Dp = 0.dp,
     // FAB visuals (used only if fab is provided)
     val fabSize: Dp = 56.dp,
     val fabContainerColor: Color = Color.Unspecified,
-    val fabIconColor: Color = Color.Unspecified
+    val fabIconColor: Color = Color.Unspecified,
+    val fabElevation: Dp = 8.dp,
 )

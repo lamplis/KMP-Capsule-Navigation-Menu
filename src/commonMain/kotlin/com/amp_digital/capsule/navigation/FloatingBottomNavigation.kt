@@ -125,50 +125,57 @@ private fun MenuContainer(
     // Track press states for each item
     val pressStates = remember { mutableStateMapOf<Int, Boolean>() }
     
-    Box {
-        // Original MenuContainer (no animations/effects)
-    Row(
-        modifier = Modifier
-            .height(config.height)
-            .clip(ContinuousCapsule)
-                .background(colors.backgroundColor)
-            .padding(horizontal = config.itemSpacing, vertical = config.itemSpacing),
-        horizontalArrangement = Arrangement.spacedBy(config.itemSpacing),
-        verticalAlignment = Alignment.CenterVertically
+    // Wrap in elevated Surface for consistent shadow treatment on the navigation capsule
+    Surface(
+        shape = ContinuousCapsule,
+        color = Color.Transparent,
+        shadowElevation = config.containerElevation,
     ) {
-        items.forEachIndexed { index, item ->
-                StaticNavigationItem(
-                item = item,
-                isSelected = selectedIndex == index,
-                onClick = { onItemSelected(index) },
-                colors = colors,
-                    enableHapticFeedback = false, // Disable haptic here, will be handled in highlight
-                    hapticFeedback = hapticFeedback,
-                    onPressChange = { isPressed ->
-                        pressStates[index] = isPressed
-                    }
-                )
+        Box {
+            // Original MenuContainer content (no animations/effects)
+            Row(
+                modifier = Modifier
+                    .height(config.height)
+                    .clip(ContinuousCapsule)
+                    .background(colors.backgroundColor)
+                    .padding(horizontal = config.itemSpacing, vertical = config.itemSpacing),
+                horizontalArrangement = Arrangement.spacedBy(config.itemSpacing),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items.forEachIndexed { index, item ->
+                    StaticNavigationItem(
+                        item = item,
+                        isSelected = selectedIndex == index,
+                        onClick = { onItemSelected(index) },
+                        colors = colors,
+                        enableHapticFeedback = false, // Disable haptic here, will be handled in highlight
+                        hapticFeedback = hapticFeedback,
+                        onPressChange = { isPressed ->
+                            pressStates[index] = isPressed
+                        }
+                    )
+                }
             }
-        }
-        
-        // Floating red highlight - positioned between MenuContainer and MenuOverlay
-        FloatingHighlight(
-            selectedIndex = selectedIndex,
-            pressStates = pressStates,
-            config = config,
-            colors = colors,
-            hapticFeedback = hapticFeedback
-        )
-        
-        // MenuOverlay - same content, 50% transparent, positioned on top
-        MenuOverlay(
-            items = items,
-            selectedIndex = selectedIndex,
-            onItemSelected = onItemSelected,
-            colors = colors,
-            config = config,
+            
+            // Floating red highlight - positioned between MenuContainer and MenuOverlay
+            FloatingHighlight(
+                selectedIndex = selectedIndex,
+                pressStates = pressStates,
+                config = config,
+                colors = colors,
                 hapticFeedback = hapticFeedback
             )
+            
+            // MenuOverlay - same content, 50% transparent, positioned on top
+            MenuOverlay(
+                items = items,
+                selectedIndex = selectedIndex,
+                onItemSelected = onItemSelected,
+                colors = colors,
+                config = config,
+                hapticFeedback = hapticFeedback
+            )
+        }
     }
 }
 
@@ -463,6 +470,7 @@ private fun resolveNavigationColors(config: NavigationConfig): NavigationColors 
 
 /**
  * Floating Action Button component for navigation.
+ * Renders as an elevated circular surface with a soft shadow for visual consistency.
  */
 @Composable
 private fun FloatingActionButton(
@@ -478,24 +486,28 @@ private fun FloatingActionButton(
         config.fabIconColor.takeIf { it != Color.Unspecified } ?: 
         MaterialTheme.colorScheme.onPrimary
 
-    Box(
-        modifier = Modifier
-            .size(config.fabSize)
-            .clip(CircleShape)
-            .background(containerColor)
-            .clickable {
-                if (config.enableHapticFeedback) {
-                    hapticFeedback.performHapticFeedback()
-                }
-                action.onClick()
-            },
-        contentAlignment = Alignment.Center
+    Surface(
+        modifier = Modifier.size(config.fabSize),
+        shape = CircleShape,
+        color = containerColor,
+        shadowElevation = config.fabElevation,
+        onClick = {
+            if (config.enableHapticFeedback) {
+                hapticFeedback.performHapticFeedback()
+            }
+            action.onClick()
+        }
     ) {
-        Icon(
-            imageVector = action.icon,
-            contentDescription = action.contentDescription,
-            tint = iconColor
-        )
+        Box(
+            modifier = Modifier.size(config.fabSize),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = action.icon,
+                contentDescription = action.contentDescription,
+                tint = iconColor
+            )
+        }
     }
 }
 
