@@ -226,17 +226,18 @@ private fun StaticNavigationItem(
             item.badge?.let { badge ->
                 Box(
                     modifier = Modifier
-                        .size(16.dp)
+                        .size(18.dp)
+                        .offset(x = 6.dp, y = (-4).dp)
                         .background(
                             color = MaterialTheme.colorScheme.error,
-                            shape = ContinuousCapsule
+                            shape = CircleShape
                         )
                         .align(Alignment.TopEnd)
                 ) {
                     Text(
                         text = badge,
-                        color = MaterialTheme.colorScheme.errorContainer,
-                        fontSize = 8.sp,
+                        color = Color.White,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -324,17 +325,22 @@ private fun OverlayNavigationItem(
                 tint = iconColor
             )
             
-            // Badge indicator - no background effects
+            // Badge indicator
             item.badge?.let { badge ->
                 Box(
                     modifier = Modifier
-                        .size(16.dp)
+                        .size(18.dp)
+                        .offset(x = 6.dp, y = (-4).dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.error,
+                            shape = CircleShape
+                        )
                         .align(Alignment.TopEnd)
                 ) {
                     Text(
                         text = badge,
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 8.sp,
+                        color = Color.White,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.align(Alignment.Center)
                     )
