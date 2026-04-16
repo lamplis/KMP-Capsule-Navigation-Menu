@@ -34,7 +34,7 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
+            implementation("org.jetbrains.compose.ui:ui-tooling-preview:${libs.versions.composeMultiplatform.get()}")
             implementation(libs.androidx.material.icons.extended)
             // KMP-Capsule dependency for ContinuousCapsule shape
             implementation(project(":libs:KMP-Capsule"))
