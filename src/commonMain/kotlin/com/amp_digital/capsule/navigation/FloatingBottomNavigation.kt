@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -45,11 +47,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import com.amp_digital.capsule.ContinuousCapsule
 import androidx.compose.ui.tooling.preview.Preview
+
+data class CapsuleMorph(
+    val shrink: Float,
+    val grow: Float,
+    val pop: Float,
+    val showField: Boolean,
+)
 
 /**
  * Floating bottom navigation bar with glass effect and safe area support.
@@ -69,7 +82,9 @@ fun FloatingBottomNavigation(
     items: List<NavigationItem>,
     config: NavigationConfig = NavigationConfig(),
     modifier: Modifier = Modifier,
-    fab: FabAction? = null
+    fab: FabAction? = null,
+    capsuleContent: (@Composable () -> Unit)? = null,
+    morph: CapsuleMorph? = null,
 ) {
     val bottomInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
     
@@ -86,27 +101,133 @@ fun FloatingBottomNavigation(
                 vertical = config.verticalPadding
             )
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            val resolvedFab = fab ?: items.getOrNull(selectedIndex)?.fabAction
-
-            MenuContainer(
+        if (morph != null) {
+            MorphingCapsule(
+                morph = morph,
                 items = items,
                 selectedIndex = selectedIndex,
                 onItemSelected = onItemSelected,
                 colors = colors,
                 config = config,
-                hapticFeedback = hapticFeedback
+                hapticFeedback = hapticFeedback,
+                capsuleContent = capsuleContent,
+                fab = fab ?: items.getOrNull(selectedIndex)?.fabAction,
             )
-            
+        } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = if (capsuleContent != null) {
+                Arrangement.spacedBy(8.dp)
+            } else {
+                Arrangement.SpaceEvenly
+            }
+        ) {
+            val resolvedFab = fab ?: items.getOrNull(selectedIndex)?.fabAction
+
+            if (capsuleContent != null) {
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(config.height),
+                    shape = ContinuousCapsule,
+                    color = colors.backgroundColor,
+                    shadowElevation = config.containerElevation,
+                ) {
+                    capsuleContent()
+                }
+            } else {
+                MenuContainer(
+                    items = items,
+                    selectedIndex = selectedIndex,
+                    onItemSelected = onItemSelected,
+                    colors = colors,
+                    config = config,
+                    hapticFeedback = hapticFeedback
+                )
+            }
+
             resolvedFab?.let { action ->
                 FloatingActionButton(
                     action = action,
                     config = config,
                     hapticFeedback = hapticFeedback
+                )
+            }
+        }
+        }
+    }
+}
+
+@Composable
+private fun MorphingCapsule(
+    morph: CapsuleMorph,
+    items: List<NavigationItem>,
+    selectedIndex: Int,
+    onItemSelected: (Int) -> Unit,
+    colors: NavigationColors,
+    config: NavigationConfig,
+    hapticFeedback: HapticFeedback,
+    capsuleContent: (@Composable () -> Unit)?,
+    fab: FabAction?,
+) {
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(config.height),
+    ) {
+        val menuWidth = config.height * items.size
+        val targetWidth = maxWidth - config.fabSize - 8.dp
+        val width =
+            if (!morph.showField) {
+                lerp(menuWidth, config.height, morph.shrink)
+            } else {
+                lerp(config.height, targetWidth, morph.grow)
+            }.coerceAtLeast(48.dp)
+        val centeredX = (maxWidth - width) / 2
+        val x =
+            if (!morph.showField) {
+                centeredX
+            } else {
+                lerp(centeredX, 0.dp, morph.grow)
+            }
+        Surface(
+            modifier = Modifier
+                .offset(x = x)
+                .width(width)
+                .height(config.height),
+            shape = ContinuousCapsule,
+            color = colors.backgroundColor,
+            shadowElevation = config.containerElevation,
+        ) {
+            if (!morph.showField) {
+                MenuContainer(
+                    items = items,
+                    selectedIndex = selectedIndex,
+                    onItemSelected = onItemSelected,
+                    colors = colors,
+                    config = config,
+                    hapticFeedback = hapticFeedback,
+                    centeredClipWidth = width,
+                )
+            } else {
+                capsuleContent?.invoke()
+            }
+        }
+        if (morph.pop > 0f && fab != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .graphicsLayer {
+                        scaleX = morph.pop
+                        scaleY = morph.pop
+                        transformOrigin = TransformOrigin.Center
+                    },
+            ) {
+                FloatingActionButton(
+                    action = fab,
+                    config = config,
+                    hapticFeedback = hapticFeedback,
                 )
             }
         }
@@ -120,8 +241,39 @@ private fun MenuContainer(
     onItemSelected: (Int) -> Unit,
     colors: NavigationColors,
     config: NavigationConfig,
-    hapticFeedback: HapticFeedback
+    hapticFeedback: HapticFeedback,
+    centeredClipWidth: Dp? = null,
 ) {
+    if (centeredClipWidth != null) {
+        Box(
+            modifier = Modifier
+                .width(centeredClipWidth)
+                .height(config.height)
+                .clip(ContinuousCapsule),
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(
+                modifier = Modifier
+                    .wrapContentWidth(unbounded = true, align = Alignment.CenterHorizontally)
+                    .height(config.height),
+                horizontalArrangement = Arrangement.spacedBy(config.itemSpacing),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                items.forEachIndexed { index, item ->
+                    StaticNavigationItem(
+                        item = item,
+                        isSelected = selectedIndex == index,
+                        onClick = { onItemSelected(index) },
+                        colors = colors,
+                        enableHapticFeedback = false,
+                        hapticFeedback = hapticFeedback,
+                    )
+                }
+            }
+        }
+        return
+    }
+
     // Track press states for each item
     val pressStates = remember { mutableStateMapOf<Int, Boolean>() }
     
